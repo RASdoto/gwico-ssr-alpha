@@ -1,0 +1,10 @@
+##gff-version 3
+##sequence-region NC_045512.2 1 29903
+NC_045512.2	RefSeq	gene	266	21555	.	+	.	ID=gene-ORF1ab;Name=ORF1ab;gene=ORF1ab
+NC_045512.2	RefSeq	CDS	266	13468	.	+	0	ID=cds-YP_009724389.1;Parent=gene-ORF1ab;gene=ORF1ab;product=ORF1ab polyprotein;locus_tag=GU280_gp01
+NC_045512.2	RefSeq	gene	21563	25384	.	+	.	ID=gene-S;Name=S;gene=S
+NC_045512.2	RefSeq	CDS	21563	25384	.	+	0	ID=cds-YP_009724390.1;Parent=gene-S;gene=S;product=surface glycoprotein;locus_tag=GU280_gp02
+NC_045512.2	RefSeq	gene	26245	26472	.	+	.	ID=gene-E;Name=E;gene=E
+NC_045512.2	RefSeq	CDS	26245	26472	.	+	0	ID=cds-YP_009724392.1;Parent=gene-E;gene=E;product=envelope protein;locus_tag=GU280_gp04
+NC_045512.2	RefSeq	gene	28274	29533	.	-	.	ID=gene-N;Name=N;gene=N
+NC_045512.2	RefSeq	CDS	28274	29533	.	-	0	ID=cds-YP_009724397.2;Parent=gene-N;gene=N;product=nucleocapsid phosphoprotein;locus_tag=GU280_gp10

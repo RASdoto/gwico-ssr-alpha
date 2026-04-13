@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Database files
+*.db
+
+# Environment
+.env
+
+# Output artifacts
+outputs/*
+!outputs/.gitkeep
+
+# OS files
+Thumbs.db
+.DS_Store

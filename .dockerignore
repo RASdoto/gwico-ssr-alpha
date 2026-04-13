@@ -1,0 +1,28 @@
+# Docker build artifacts
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# Development files
+.venv/
+.git/
+.gitignore
+
+# Test and doc files not needed in image
+tests/
+docs/
+*.md
+!README.md
+
+# Output artifacts
+outputs/
+*.db
+
+# Chunk development notes
+chunk *.md
+
+# IDE files
+.vscode/
+.idea/

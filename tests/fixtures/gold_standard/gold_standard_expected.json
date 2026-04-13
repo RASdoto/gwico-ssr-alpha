@@ -1,0 +1,200 @@
+{
+  "thresholds": {
+    "mono": 10,
+    "di": 5,
+    "tri": 3,
+    "tetra": 3,
+    "penta": 3,
+    "hexa": 2
+  },
+  "sequences": {
+    "GOLD_001": {
+      "length": 500,
+      "total_hits": 12,
+      "hits": [
+        {
+          "start": 10,
+          "end": 22,
+          "motif_raw": "A",
+          "motif_canonical": "A",
+          "motif_size": 1,
+          "repeat_units": 12,
+          "repeat_length_bp": 12,
+          "strand": "+",
+          "actual_repeat": "AAAAAAAAAAAA"
+        },
+        {
+          "start": 40,
+          "end": 55,
+          "motif_raw": "C",
+          "motif_canonical": "C",
+          "motif_size": 1,
+          "repeat_units": 15,
+          "repeat_length_bp": 15,
+          "strand": "+",
+          "actual_repeat": "CCCCCCCCCCCCCCC"
+        },
+        {
+          "start": 57,
+          "end": 66,
+          "motif_raw": "GCA",
+          "motif_canonical": "AGC",
+          "motif_size": 3,
+          "repeat_units": 3,
+          "repeat_length_bp": 9,
+          "strand": "+",
+          "actual_repeat": "GCAGCAGCA"
+        },
+        {
+          "start": 69,
+          "end": 81,
+          "motif_raw": "TA",
+          "motif_canonical": "AT",
+          "motif_size": 2,
+          "repeat_units": 6,
+          "repeat_length_bp": 12,
+          "strand": "+",
+          "actual_repeat": "TATATATATATA"
+        },
+        {
+          "start": 100,
+          "end": 116,
+          "motif_raw": "AG",
+          "motif_canonical": "AG",
+          "motif_size": 2,
+          "repeat_units": 8,
+          "repeat_length_bp": 16,
+          "strand": "+",
+          "actual_repeat": "AGAGAGAGAGAGAGAG"
+        },
+        {
+          "start": 130,
+          "end": 142,
+          "motif_raw": "AAG",
+          "motif_canonical": "AAG",
+          "motif_size": 3,
+          "repeat_units": 4,
+          "repeat_length_bp": 12,
+          "strand": "+",
+          "actual_repeat": "AAGAAGAAGAAG"
+        },
+        {
+          "start": 160,
+          "end": 175,
+          "motif_raw": "ATG",
+          "motif_canonical": "ATC",
+          "motif_size": 3,
+          "repeat_units": 5,
+          "repeat_length_bp": 15,
+          "strand": "-",
+          "actual_repeat": "ATGATGATGATGATG"
+        },
+        {
+          "start": 200,
+          "end": 212,
+          "motif_raw": "AATG",
+          "motif_canonical": "AATG",
+          "motif_size": 4,
+          "repeat_units": 3,
+          "repeat_length_bp": 12,
+          "strand": "+",
+          "actual_repeat": "AATGAATGAATG"
+        },
+        {
+          "start": 230,
+          "end": 246,
+          "motif_raw": "ACTG",
+          "motif_canonical": "ACTG",
+          "motif_size": 4,
+          "repeat_units": 4,
+          "repeat_length_bp": 16,
+          "strand": "+",
+          "actual_repeat": "ACTGACTGACTGACTG"
+        },
+        {
+          "start": 269,
+          "end": 284,
+          "motif_raw": "TAACG",
+          "motif_canonical": "AACGT",
+          "motif_size": 5,
+          "repeat_units": 3,
+          "repeat_length_bp": 15,
+          "strand": "+",
+          "actual_repeat": "TAACGTAACGTAACG"
+        },
+        {
+          "start": 318,
+          "end": 330,
+          "motif_raw": "TTAACG",
+          "motif_canonical": "AACGTT",
+          "motif_size": 6,
+          "repeat_units": 2,
+          "repeat_length_bp": 12,
+          "strand": "+",
+          "actual_repeat": "TTAACGTTAACG"
+        },
+        {
+          "start": 360,
+          "end": 378,
+          "motif_raw": "AATCGG",
+          "motif_canonical": "AATCGG",
+          "motif_size": 6,
+          "repeat_units": 3,
+          "repeat_length_bp": 18,
+          "strand": "+",
+          "actual_repeat": "AATCGGAATCGGAATCGG"
+        }
+      ]
+    },
+    "GOLD_002": {
+      "length": 300,
+      "total_hits": 4,
+      "hits": [
+        {
+          "start": 10,
+          "end": 30,
+          "motif_raw": "T",
+          "motif_canonical": "A",
+          "motif_size": 1,
+          "repeat_units": 20,
+          "repeat_length_bp": 20,
+          "strand": "-",
+          "actual_repeat": "TTTTTTTTTTTTTTTTTTTT"
+        },
+        {
+          "start": 29,
+          "end": 38,
+          "motif_raw": "TCC",
+          "motif_canonical": "AGG",
+          "motif_size": 3,
+          "repeat_units": 3,
+          "repeat_length_bp": 9,
+          "strand": "-",
+          "actual_repeat": "TCCTCCTCC"
+        },
+        {
+          "start": 50,
+          "end": 70,
+          "motif_raw": "GC",
+          "motif_canonical": "CG",
+          "motif_size": 2,
+          "repeat_units": 10,
+          "repeat_length_bp": 20,
+          "strand": "+",
+          "actual_repeat": "GCGCGCGCGCGCGCGCGCGC"
+        },
+        {
+          "start": 90,
+          "end": 108,
+          "motif_raw": "CAG",
+          "motif_canonical": "AGC",
+          "motif_size": 3,
+          "repeat_units": 6,
+          "repeat_length_bp": 18,
+          "strand": "+",
+          "actual_repeat": "CAGCAGCAGCAGCAGCAG"
+        }
+      ]
+    }
+  }
+}

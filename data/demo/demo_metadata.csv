@@ -1,0 +1,3 @@
+Accession,Release_Date,Species,Length,Nuc_Completeness,Geo_Location,USA,Host,Isolation_Source,Collection_Date
+DEMO_001,2024-01-15T00:00:00Z,Demo organism,500,complete,China,,Homo sapiens,,2024-01
+DEMO_002,2024-02-20T00:00:00Z,Demo organism,300,complete,USA: California,California,Homo sapiens,clinical specimen,2024-02-15

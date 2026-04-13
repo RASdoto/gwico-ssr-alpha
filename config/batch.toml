@@ -1,0 +1,31 @@
+# GWICO-SSR Large Batch Configuration
+# Tuned for processing large datasets (10K+ accessions).
+# Copy to your working directory and adjust as needed.
+
+[database]
+url = "sqlite:///gwico_ssr_batch.db"
+echo = false
+
+[ncbi]
+api_key = ""       # Set your NCBI API key for 10 req/sec (vs 3/sec without)
+email = ""         # Required by NCBI Entrez
+max_retries = 5    # More retries for large downloads
+rate_limit = 10.0  # Use 10/sec if you have an API key, 3/sec otherwise
+batch_size = 500
+
+[ssr]
+# Default PERF-compatible thresholds
+min_repeats_mono = 10
+min_repeats_di = 5
+min_repeats_tri = 3
+min_repeats_tetra = 3
+min_repeats_penta = 3
+min_repeats_hexa = 2
+
+[logging]
+level = "INFO"
+format = "json"
+file = "gwico_ssr_batch.log"   # Log to file for batch runs
+
+[output]
+dir = "outputs"

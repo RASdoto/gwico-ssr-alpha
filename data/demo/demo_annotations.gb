@@ -1,0 +1,54 @@
+LOCUS       DEMO_001                 500 bp    DNA     linear   VRL 15-JAN-2024
+DEFINITION  Demo organism genome 1, complete genome.
+ACCESSION   DEMO_001
+VERSION     DEMO_001
+FEATURES             Location/Qualifiers
+     source          1..500
+                     /organism="Demo organism"
+                     /mol_type="genomic DNA"
+     CDS             10..200
+                     /gene="geneA"
+                     /product="protein A"
+                     /locus_tag="DEMO_001_0001"
+     CDS             220..400
+                     /gene="geneB"
+                     /product="protein B"
+                     /locus_tag="DEMO_001_0002"
+     CDS             410..490
+                     /gene="geneC"
+                     /product="protein C"
+                     /locus_tag="DEMO_001_0003"
+ORIGIN
+        1 agaaactatt aaaaaaaaaa aattaatgcg accgtcactt ccccccccccc ccccttgcag
+       61 cagcaattta tatatatata tcccatagag atccttatga gagagagaga gagagttaag
+      121 ctacccatta agaagaagaa gttagacact cttagactta tgatgatgat gatgtttacg
+      181 ctcagtgagc tgactcatta atgaatgaat gttgaccaac tctactatta ctgactgact
+      241 gactgttatg ctcgattaag cgcgtcatta acgtaacgta acgtccgaat agcagttggt
+      301 gcagcttcgg tgctctatta acgttaacgt tccactatga gaaataatct tggaacgtta
+      361 atcggaatcg gaatcggttg ctctttgagt cagatatcta tctgcgtaac ggtcccgtgg
+      421 ttgtgcctgt catatcacgt gttacgaaag aagccatcct ctcggttctc ggtaatgcga
+      481 catcagctgg gtggtcctg
+//
+LOCUS       DEMO_002                 300 bp    DNA     linear   VRL 20-FEB-2024
+DEFINITION  Demo organism genome 2, complete genome.
+ACCESSION   DEMO_002
+VERSION     DEMO_002
+FEATURES             Location/Qualifiers
+     source          1..300
+                     /organism="Demo organism"
+                     /mol_type="genomic DNA"
+     CDS             10..120
+                     /gene="geneA"
+                     /product="protein A"
+                     /locus_tag="DEMO_002_0001"
+     CDS             140..280
+                     /gene="geneB"
+                     /product="protein B"
+                     /locus_tag="DEMO_002_0002"
+ORIGIN
+        1 tcagatgccc tttttttttt tttttttttt cctcctccta ctagcagatt gcgcgcgcgc
+       61 gcgcgcgcgc ttttcgcccg cgatgctgtt cagcagcagc agcagcagtt atgggcaacg
+      121 cgactccaac atcccataca tcaccgtcac gcacggagca gtcgcgtaac cagctctgct
+      181 gtcacctcgt atgaggaata gtgcagccac tccacgatct ttgggactcc tagcatgcat
+      241 agtaaccagt aggagtatat catgctgtct accagataca cagagtcacg tggagctccg
+//

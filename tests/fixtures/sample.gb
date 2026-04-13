@@ -1,0 +1,52 @@
+LOCUS       NC_045512              444 bp    ss-RNA  linear   VRL 18-JUL-2020
+DEFINITION  Severe acute respiratory syndrome coronavirus 2 isolate Wuhan-Hu-1,
+            complete genome.
+ACCESSION   NC_045512
+VERSION     NC_045512.2
+KEYWORDS    RefSeq.
+SOURCE      Severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2)
+  ORGANISM  Severe acute respiratory syndrome coronavirus 2
+            Viruses; Riboviria; Orthornavirae; Pisuviricota; Pisoniviricetes;
+            Nidovirales; Cornidovirineae; Coronaviridae; Orthocoronavirinae;
+            Betacoronavirus; Sarbecovirus.
+REFERENCE   1  (bases 1 to 444)
+  AUTHORS   Wu,F.
+  TITLE     A new coronavirus associated with human respiratory disease in China
+  JOURNAL   Nature 579 (7798), 265-269 (2020)
+FEATURES             Location/Qualifiers
+     source          1..444
+                     /organism="Severe acute respiratory syndrome coronavirus 2"
+                     /mol_type="genomic RNA"
+                     /isolate="Wuhan-Hu-1"
+                     /db_xref="taxon:2697049"
+     gene            10..200
+                     /gene="ORF1ab"
+     CDS             10..200
+                     /gene="ORF1ab"
+                     /locus_tag="GU280_gp01"
+                     /product="ORF1ab polyprotein"
+                     /codon_start=1
+     gene            220..400
+                     /gene="S"
+     CDS             220..400
+                     /gene="S"
+                     /locus_tag="GU280_gp02"
+                     /product="surface glycoprotein"
+                     /codon_start=1
+     gene            410..440
+                     /gene="E"
+     CDS             410..440
+                     /gene="E"
+                     /locus_tag="GU280_gp04"
+                     /product="envelope protein"
+                     /codon_start=1
+ORIGIN
+        1 attaaagctt tataccttcc caggtaacaa accaaccaac tttcgatctc ttgtagatct
+       61 gttctctaaa cgaactttaa aatctgtgtg gctgtcactc ggctgcatgc ttagtgcact
+      121 cacgcagtat aattaataac taattactgt cgttgacagg acacgagtaa ctcgtctatc
+      181 ttctgcaggc tgcttacggt ttcgtccgtg ttgcagccga tcatcagcac atctaggttt
+      241 cgtccgggtg tgaccgaaag gtaagatgga gagccttgtc cctggtttca acgagaaaac
+      301 acacgtccaa ctcagtttgc ctgttttaca ggttcgcgac gtgctcgtac gtggctttgg
+      361 agactccgtg gaggaggtct tatcagaggc acgtcaacat cttaaagatg gcacttgtgg
+      421 cttagtagaa gttgaaaaag gcgt
+//

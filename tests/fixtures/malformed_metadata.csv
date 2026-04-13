@@ -1,0 +1,10 @@
+Accession,Release_Date,Species,Length,Nuc_Completeness,Geo_Location,USA,Host,Isolation_Source,Collection_Date
+,2020-01-13T00:00:00Z,Severe acute respiratory syndrome-related coronavirus,29903,complete,China,,Homo sapiens,,2019-12
+OQ111111.1,not-a-date,Severe acute respiratory syndrome coronavirus 2,abc,complete,USA: Texas,,Homo sapiens,,2023-01-01
+OQ222222.1,2023-06-01T00:00:00Z,Severe acute respiratory syndrome coronavirus 2,-5,partial,,,Homo sapiens,,invalid-date-format
+@INVALID!,2023-01-01T00:00:00Z,Severe acute respiratory syndrome coronavirus 2,29900,complete,UK,,Homo sapiens,,2023-01
+OQ333333.1,2023-04-01T00:00:00Z,Severe acute respiratory syndrome coronavirus 2,29880,complete,Japan,,Homo sapiens,,2023-03-25
+OQ333333.1,2023-04-02T00:00:00Z,Severe acute respiratory syndrome coronavirus 2,29881,complete,Japan,,Homo sapiens,,2023-03-26
+
+
+

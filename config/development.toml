@@ -1,0 +1,29 @@
+# GWICO-SSR Development Configuration
+# For local development and testing with verbose output.
+
+[database]
+url = "sqlite:///gwico_ssr_dev.db"
+echo = true    # Print SQL statements
+
+[ncbi]
+api_key = ""
+email = ""
+max_retries = 2
+rate_limit = 3.0
+batch_size = 100
+
+[ssr]
+min_repeats_mono = 10
+min_repeats_di = 5
+min_repeats_tri = 3
+min_repeats_tetra = 3
+min_repeats_penta = 3
+min_repeats_hexa = 2
+
+[logging]
+level = "DEBUG"
+format = "text"     # Human-readable for development
+file = ""           # Stdout only
+
+[output]
+dir = "outputs_dev"

@@ -1,0 +1,30 @@
+# GWICO-SSR Default Configuration
+# Override any value via environment variables prefixed with GWICO_SSR_
+# e.g. GWICO_SSR_DB_URL=postgresql://... overrides [database].url
+
+[database]
+url = "sqlite:///gwico_ssr.db"
+echo = false
+
+[ncbi]
+api_key = ""
+email = ""
+max_retries = 3
+rate_limit = 3.0
+batch_size = 500
+
+[ssr]
+min_repeats_mono = 10
+min_repeats_di = 5
+min_repeats_tri = 3
+min_repeats_tetra = 3
+min_repeats_penta = 3
+min_repeats_hexa = 2
+
+[logging]
+level = "INFO"
+format = "json"
+file = ""
+
+[output]
+dir = "outputs"

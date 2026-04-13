@@ -1,0 +1,6 @@
+Accession,Release_Date,Species,Length,Nuc_Completeness,Geo_Location,USA,Host,Isolation_Source,Collection_Date
+NC_045512.2,2020-01-13T00:00:00Z,Severe acute respiratory syndrome-related coronavirus,29903,complete,China,,Homo sapiens,,2019-12
+OQ123456.1,2023-03-15T00:00:00Z,Severe acute respiratory syndrome coronavirus 2,29850,complete,USA: California,California,Homo sapiens,nasopharyngeal swab,2023-03-10
+OQ789012.1,2023-05-20T00:00:00Z,Severe acute respiratory syndrome coronavirus 2,29870,complete,South Korea: Seoul,,Homo sapiens,clinical specimen,2023-05-15
+OQ345678.1,2022-11-01T00:00:00Z,Severe acute respiratory syndrome coronavirus 2,29890,complete,Germany,,Homo sapiens,,2022-10
+OQ901234.1,2023-01-10T00:00:00Z,Severe acute respiratory syndrome coronavirus 2,29830,complete,Brazil: Sao Paulo,,Homo sapiens,oropharyngeal swab,2023-01-05
