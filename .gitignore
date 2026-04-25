@@ -31,6 +31,10 @@ htmlcov/
 # Environment
 .env
 
+# Generated documentation/reports
+CHUNK*_COMPLETION_REPORT.md
+MILESTONE*_GATE_REVIEW.md
+
 # Output artifacts
 outputs/*
 !outputs/.gitkeep
