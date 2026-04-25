@@ -17,6 +17,9 @@ def test_default_settings():
     assert settings.ssr.min_repeats_mono == 10
     assert settings.ssr.min_repeats_tri == 3
     assert settings.logging.level == "INFO"
+    assert settings.ncbi.request_batch_size == 500
+    assert settings.batch.artifact_batch_size == 10000
+    assert settings.batch.parse_chunk_size == 1000
 
 
 def test_load_from_toml(sample_toml: Path):
@@ -26,6 +29,7 @@ def test_load_from_toml(sample_toml: Path):
     assert settings.database.echo is True
     assert settings.ncbi.email == "test@example.com"
     assert settings.ncbi.max_retries == 5
+    assert settings.ncbi.request_batch_size == 700
     assert settings.ssr.min_repeats_mono == 12
     assert settings.ssr.min_repeats_di == 6
     # Unset values keep defaults
@@ -33,6 +37,9 @@ def test_load_from_toml(sample_toml: Path):
     assert settings.logging.level == "DEBUG"
     assert settings.logging.format == "text"
     assert settings.output.dir == "test_outputs"
+    assert settings.batch.artifact_batch_size == 12000
+    assert settings.batch.parse_chunk_size == 1500
+    assert settings.batch.retain_raw_artifacts is False
 
 
 def test_env_override(monkeypatch: pytest.MonkeyPatch):

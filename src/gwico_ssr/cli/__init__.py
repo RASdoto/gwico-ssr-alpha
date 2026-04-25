@@ -69,6 +69,14 @@ def info(ctx: click.Context) -> None:
                f"tetra≥{settings.ssr.min_repeats_tetra}, "
                f"penta≥{settings.ssr.min_repeats_penta}, "
                f"hexa≥{settings.ssr.min_repeats_hexa}")
+    # Chunk 5: Display detector configuration
+    click.echo(f"Detector mode: {settings.detector.detector_mode}")
+    click.echo(f"Standardization level: {settings.detector.standardization_level}")
+    if settings.detector.detector_mode != "perfect":
+        click.echo(f"Imperfection threshold: {settings.detector.imperfection_threshold_pct}%")
+        click.echo(f"Indel max size: {settings.detector.indel_max_size} bp")
+    if settings.detector.detector_mode == "compound":
+        click.echo(f"Compound dmax: {settings.detector.compound_dmax_bp} bp")
 
 
 @cli.command("init-db")
@@ -239,7 +247,7 @@ def download(
         api_key=settings.ncbi.api_key,
         max_retries=settings.ncbi.max_retries,
         rate_limit=settings.ncbi.rate_limit,
-        batch_size=settings.ncbi.batch_size,
+        batch_size=settings.ncbi.request_batch_size,
     )
     client = EntrezClient(entrez_config)
 
@@ -278,6 +286,11 @@ def download(
             output_dir=settings.output.dir,
             file_types=ft,
             force=force,
+            request_batch_size=settings.ncbi.request_batch_size,
+            artifact_batch_size=settings.batch.artifact_batch_size,
+            persist_composite_artifacts=settings.batch.retain_raw_artifacts,
+            manifest_policy=settings.batch.manifest_policy,
+            duplicate_handling=settings.batch.duplicate_handling,
         )
 
     # Write retry manifest if there were failures
@@ -290,6 +303,9 @@ def download(
         click.echo(f"Already downloaded: {summary.already_downloaded}")
         click.echo(f"Downloaded OK: {summary.downloaded_ok}")
         click.echo(f"Failed: {summary.failed}")
+        click.echo(f"Request batch size: {summary.request_batch_size}")
+        click.echo(f"Artifact batch size: {summary.artifact_batch_size}")
+        click.echo(f"Raw artifacts written: {summary.raw_artifacts_written}")
         if manifest_path:
             click.echo(f"Retry manifest: {manifest_path}")
         if summary.failures:
@@ -429,6 +445,18 @@ def parse(
     default=False,
     help="Emit detection summary as JSON.",
 )
+@click.option(
+    "--detector-mode",
+    type=click.Choice(["perfect", "imperfect", "compound"]),
+    default=None,
+    help="Detector mode: perfect (alpha), imperfect (Chunk 6), or compound (Chunk 7). Default from config.",
+)
+@click.option(
+    "--standardization-level",
+    type=click.Choice(["L0", "L1", "L2", "Full"]),
+    default=None,
+    help="Motif standardization level (Chunk 7). Default from config.",
+)
 @click.pass_context
 def detect(
     ctx: click.Context,
@@ -437,8 +465,14 @@ def detect(
     data_dir: str | None,
     force: bool,
     detect_json_summary: bool,
+    detector_mode: str | None,
+    standardization_level: str | None,
 ) -> None:
-    """Detect perfect SSRs (motif sizes 1-6) in parsed sequences."""
+    """Detect perfect SSRs (motif sizes 1-6) in parsed sequences.
+    
+    Chunk 5: CLI now accepts --detector-mode and --standardization-level options
+    for future imperfect and compound detection modes (not yet implemented).
+    """
     import json
     from pathlib import Path
 
@@ -461,7 +495,15 @@ def detect(
     effective_data_dir = data_dir or settings.output.dir
     thresholds = SSRThresholds.from_config(settings.ssr)
 
-    # Resolve accession list
+    # Chunk 5: Determine effective detector mode (CLI override or config)
+    effective_detector_mode = detector_mode or settings.detector.detector_mode
+    effective_standardization_level = standardization_level or settings.detector.standardization_level
+    
+    if not detect_json_summary:
+        logger.info(
+            f"Detector mode: {effective_detector_mode}",
+            extra={"standardization_level": effective_standardization_level}
+        )
     acc_ids: list[str] = []
     if accessions:
         acc_ids = [a.strip() for a in accessions.split(",") if a.strip()]

@@ -12,6 +12,7 @@ email = ""
 max_retries = 3
 rate_limit = 3.0
 batch_size = 500
+request_batch_size = 500
 
 [ssr]
 min_repeats_mono = 10
@@ -28,3 +29,18 @@ file = ""
 
 [output]
 dir = "outputs"
+
+[batch]
+artifact_batch_size = 10000
+parse_chunk_size = 1000
+retain_raw_artifacts = true
+manifest_policy = "required"
+duplicate_handling = "error"
+
+[detector]
+# Chunk 5: IMEX-compatible detector configuration
+detector_mode = "perfect"                    # perfect, imperfect (Chunk 6), compound (Chunk 7)
+imperfection_threshold_pct = 5.0             # Max % mismatch for imperfect detection
+indel_max_size = 1                           # Max bp per indel event
+compound_dmax_bp = 10                        # Max gap between compound components
+standardization_level = "L2"                 # L0, L1, L2, Full

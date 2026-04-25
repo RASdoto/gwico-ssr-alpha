@@ -199,6 +199,134 @@ def aggregate_by_gene(session: Session, dataset_id: int | None = None) -> list[G
     ]
 
 
+# ---------------------------------------------------------------------------
+# Chunk 8: Repeat class aggregations
+# ---------------------------------------------------------------------------
+
+def aggregate_by_repeat_class(session: Session, run_id: int) -> list[CohortSummary]:
+    """Aggregate SSR counts by repeat_class across all accessions in a run.
+    
+    Returns CohortSummary for perfect, imperfect, and compound_component classes.
+    """
+    class_labels = {
+        "perfect": "perfect",
+        "imperfect": "imperfect",
+        "compound_component": "compound_component",
+    }
+    class_columns = {
+        "perfect": "perfect_count",
+        "imperfect": "imperfect_count",
+        "compound_component": "compound_component_count",
+    }
+    results = []
+    for class_name, col_name in class_columns.items():
+        # Query AccessionMetrics which now has these class-specific counts
+        col = getattr(AccessionMetrics, col_name)
+        stmt = (
+            select(
+                func.count(AccessionMetrics.id).label("count"),
+                func.sum(col).label("total_ssrs"),
+            )
+            .where(AccessionMetrics.run_id == run_id)
+        )
+        row = session.execute(stmt).one()
+        results.append(CohortSummary(
+            group_key="repeat_class",
+            group_value=class_name,
+            count=row.count,
+            total_ssrs=row.total_ssrs or 0,
+        ))
+    return results
+
+
+def aggregate_motif_frequencies_by_class(
+    session: Session,
+    repeat_class: str = "perfect",
+    dataset_id: int | None = None
+) -> list[MotifFrequency]:
+    """Count SSR occurrences by canonical motif, filtered by repeat_class.
+    
+    Chunk 8: Enables class-specific motif analysis across the dataset.
+    
+    Args:
+        session: SQLAlchemy session.
+        repeat_class: Filter to this repeat_class (perfect, imperfect, compound_component).
+        dataset_id: Optional dataset filter.
+    
+    Returns:
+        Motifs sorted by total count descending.
+    """
+    stmt = (
+        select(
+            SSRRecord.motif_canonical,
+            SSRRecord.motif_size,
+            func.count(SSRRecord.ssr_id).label("total_count"),
+            func.sum(SSRRecord.repeat_length_bp).label("total_bp"),
+        )
+        .where(SSRRecord.repeat_class == repeat_class)
+        .group_by(SSRRecord.motif_canonical, SSRRecord.motif_size)
+        .order_by(func.count(SSRRecord.ssr_id).desc())
+    )
+    if dataset_id is not None:
+        stmt = stmt.join(Accession, SSRRecord.accession == Accession.accession).where(
+            Accession.dataset_id == dataset_id
+        )
+    rows = session.execute(stmt).all()
+    return [
+        MotifFrequency(
+            motif_canonical=r.motif_canonical,
+            motif_size=r.motif_size,
+            total_count=r.total_count,
+            total_bp=r.total_bp or 0,
+        )
+        for r in rows
+    ]
+
+
+def aggregate_by_gene_and_class(
+    session: Session,
+    repeat_class: str = "perfect",
+    dataset_id: int | None = None
+) -> list[GeneSSRSummary]:
+    """Count SSRs per gene, filtered by repeat_class.
+    
+    Chunk 8: Enables class-specific gene-level analysis across the dataset.
+    
+    Args:
+        session: SQLAlchemy session.
+        repeat_class: Filter to this repeat_class (perfect, imperfect, compound_component).
+        dataset_id: Optional dataset filter.
+    
+    Returns:
+        Genes sorted by SSR count descending.
+    """
+    stmt = (
+        select(
+            SSRAnnotation.gene_name,
+            func.count(SSRAnnotation.annotation_id).label("ssr_count"),
+            func.count(func.distinct(SSRAnnotation.accession)).label("accession_count"),
+        )
+        .join(SSRRecord, SSRAnnotation.ssr_id == SSRRecord.ssr_id)
+        .where(SSRRecord.repeat_class == repeat_class)
+        .where(SSRAnnotation.gene_name.isnot(None))
+        .group_by(SSRAnnotation.gene_name)
+        .order_by(func.count(SSRAnnotation.annotation_id).desc())
+    )
+    if dataset_id is not None:
+        stmt = stmt.join(Accession, SSRAnnotation.accession == Accession.accession).where(
+            Accession.dataset_id == dataset_id
+        )
+    rows = session.execute(stmt).all()
+    return [
+        GeneSSRSummary(
+            gene_name=r.gene_name,
+            ssr_count=r.ssr_count,
+            accession_count=r.accession_count,
+        )
+        for r in rows
+    ]
+
+
 def get_dataset_summary(session: Session, run_id: int) -> dict:
     """Build a comprehensive dataset summary for a run.
 

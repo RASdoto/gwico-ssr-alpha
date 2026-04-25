@@ -219,6 +219,63 @@ class EntrezClient:
 
         return results
 
+    def fetch_batch_genbank(self, accessions: list[str]) -> list[EntrezResult]:
+        """Download GenBank records for a batch of accessions.
+
+        Uses a single efetch call with comma-joined IDs when possible.
+        Falls back to individual fetches on batch failure.
+        """
+        if not accessions:
+            return []
+
+        results: list[EntrezResult] = []
+        try:
+            self._throttle()
+            handle = Entrez.efetch(
+                db="nucleotide",
+                id=",".join(accessions),
+                rettype="gb",
+                retmode="text",
+            )
+            data = handle.read()
+            handle.close()
+
+            if isinstance(data, bytes):
+                data = data.decode("utf-8", errors="replace")
+
+            records = _split_genbank(data)
+
+            found_ids = set()
+            for record_text in records:
+                rec_id = _extract_accession_from_genbank_record(record_text, accessions)
+                if rec_id:
+                    found_ids.add(rec_id)
+                    results.append(EntrezResult(
+                        accession=rec_id,
+                        file_type="genbank",
+                        success=True,
+                        data=record_text,
+                    ))
+
+            for acc in accessions:
+                if acc not in found_ids:
+                    results.append(EntrezResult(
+                        accession=acc,
+                        file_type="genbank",
+                        success=False,
+                        error="Not found in batch response",
+                    ))
+
+        except Exception as exc:
+            logger.warning(
+                "Batch GenBank fetch failed, falling back to individual fetches",
+                extra={"batch_size": len(accessions), "error": str(exc)},
+            )
+            for acc in accessions:
+                results.append(self.fetch_genbank(acc))
+
+        return results
+
 
 def _split_fasta(data: str) -> list[str]:
     """Split multi-FASTA text into individual records."""
@@ -256,3 +313,49 @@ def _extract_accession_from_header(
             return acc
 
     return first_token if first_token else None
+
+
+def _split_genbank(data: str) -> list[str]:
+    """Split multi-record GenBank text into individual records."""
+    records: list[str] = []
+    current: list[str] = []
+    for line in data.splitlines():
+        current.append(line)
+        if line.strip() == "//":
+            records.append("\n".join(current).strip() + "\n")
+            current = []
+    if current and any(line.strip() for line in current):
+        records.append("\n".join(current).strip() + "\n")
+    return [r for r in records if r.strip()]
+
+
+def _extract_accession_from_genbank_record(
+    record_text: str,
+    known_accessions: list[str],
+) -> Optional[str]:
+    """Extract accession from a GenBank record body."""
+    lines = record_text.splitlines()
+    candidates: list[str] = []
+    for line in lines:
+        if line.startswith("VERSION"):
+            parts = line.split()
+            if len(parts) >= 2:
+                candidates.append(parts[1].strip())
+        elif line.startswith("ACCESSION"):
+            parts = line.split()
+            if len(parts) >= 2:
+                candidates.append(parts[1].strip())
+        elif line.startswith("LOCUS"):
+            parts = line.split()
+            if len(parts) >= 2:
+                candidates.append(parts[1].strip())
+
+    for candidate in candidates:
+        for acc in known_accessions:
+            if candidate == acc or candidate.startswith(acc) or acc.startswith(candidate):
+                return acc
+
+    for candidate in candidates:
+        if candidate:
+            return candidate
+    return None

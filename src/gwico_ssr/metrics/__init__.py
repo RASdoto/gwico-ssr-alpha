@@ -8,6 +8,8 @@ from gwico_ssr.metrics.calculator import (
     compute_motif_size_counts,
     compute_ra,
     compute_rd,
+    compute_repeat_class_breakdown,
+    compute_repeat_class_bp_breakdown,
 )
 from gwico_ssr.metrics.aggregator import (
     CohortSummary,
@@ -17,6 +19,9 @@ from gwico_ssr.metrics.aggregator import (
     aggregate_by_gene,
     aggregate_by_motif_size,
     aggregate_motif_frequencies,
+    aggregate_by_repeat_class,
+    aggregate_motif_frequencies_by_class,
+    aggregate_by_gene_and_class,
     get_dataset_summary,
 )
 
@@ -29,11 +34,16 @@ __all__ = [
     "aggregate_by_gene",
     "aggregate_by_motif_size",
     "aggregate_motif_frequencies",
+    "aggregate_by_repeat_class",
+    "aggregate_motif_frequencies_by_class",
+    "aggregate_by_gene_and_class",
     "compute_accession_metrics",
     "compute_dominant_motif",
     "compute_metrics_for_accession",
     "compute_motif_size_counts",
     "compute_ra",
     "compute_rd",
+    "compute_repeat_class_breakdown",
+    "compute_repeat_class_bp_breakdown",
     "get_dataset_summary",
 ]

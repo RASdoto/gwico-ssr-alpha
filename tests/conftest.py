@@ -26,6 +26,7 @@ echo = true
 [ncbi]
 email = "test@example.com"
 max_retries = 5
+request_batch_size = 700
 
 [ssr]
 min_repeats_mono = 12
@@ -38,6 +39,13 @@ file = ""
 
 [output]
 dir = "test_outputs"
+
+[batch]
+artifact_batch_size = 12000
+parse_chunk_size = 1500
+retain_raw_artifacts = false
+manifest_policy = "required"
+duplicate_handling = "error"
 """
     config_file = tmp_path / "test_config.toml"
     config_file.write_text(config_content, encoding="utf-8")

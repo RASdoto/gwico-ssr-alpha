@@ -37,6 +37,8 @@ from gwico_ssr.ingest.entrez_client import (
     EntrezConfig,
     EntrezResult,
     _extract_accession_from_header,
+    _extract_accession_from_genbank_record,
+    _split_genbank,
     _split_fasta,
 )
 from gwico_ssr.models.schema import Base, SequenceRecord
@@ -92,6 +94,17 @@ FEATURES             Location/Qualifiers
                      /organism="Severe acute respiratory syndrome coronavirus 2"
 ORIGIN
         1 attaaaggtt tataccttcc caggtaacaa accaaccaac tttcgatctc ttgtagatct
+//
+"""
+
+SAMPLE_GENBANK_2 = """LOCUS       OQ111111              29903 bp    ss-RNA  linear   VRL 18-JUL-2020
+DEFINITION  Test sequence.
+ACCESSION   OQ111111
+VERSION     OQ111111.1
+FEATURES             Location/Qualifiers
+     source          1..29903
+ORIGIN
+    1 attaaaggtt tataccttcc caggtaacaa accaaccaac tttcgatctc ttgtagatct
 //
 """
 
@@ -191,6 +204,39 @@ class TestEntrezClient:
         assert result.success is True
         assert isinstance(result.data, str)
 
+    @patch("gwico_ssr.ingest.entrez_client.Entrez.efetch")
+    def test_fetch_batch_genbank_success(self, mock_efetch):
+        mock_handle = MagicMock()
+        mock_handle.read.return_value = SAMPLE_GENBANK + "\n" + SAMPLE_GENBANK_2
+        mock_efetch.return_value = mock_handle
+
+        config = EntrezConfig(rate_limit=0.0, max_retries=1)
+        client = EntrezClient(config)
+        results = client.fetch_batch_genbank(["NC_045512.2", "OQ111111.1"])
+
+        assert len(results) == 2
+        ok = [r for r in results if r.success]
+        assert len(ok) == 2
+
+    @patch("gwico_ssr.ingest.entrez_client.Entrez.efetch")
+    def test_fetch_batch_genbank_fallback(self, mock_efetch):
+        mock_efetch.side_effect = Exception("Batch unavailable")
+
+        config = EntrezConfig(rate_limit=0.0, max_retries=1)
+        client = EntrezClient(config)
+
+        with patch.object(client, "fetch_genbank") as mock_single:
+            mock_single.side_effect = lambda acc: EntrezResult(
+                accession=acc,
+                file_type="genbank",
+                success=True,
+                data=SAMPLE_GENBANK,
+            )
+            results = client.fetch_batch_genbank(["NC_045512.2", "OQ111111.1"])
+
+        assert len(results) == 2
+        assert all(r.success for r in results)
+
 
 class TestFastaHelpers:
     def test_split_fasta_single(self):
@@ -222,6 +268,19 @@ class TestFastaHelpers:
 
     def test_extract_accession_no_header(self):
         assert _extract_accession_from_header("ATGC", []) is None
+
+
+class TestGenBankHelpers:
+    def test_split_genbank_multi(self):
+        records = _split_genbank(SAMPLE_GENBANK + "\n" + SAMPLE_GENBANK_2)
+        assert len(records) == 2
+
+    def test_extract_accession_from_genbank_record(self):
+        acc = _extract_accession_from_genbank_record(
+            SAMPLE_GENBANK,
+            ["NC_045512.2", "OQ111111.1"],
+        )
+        assert acc == "NC_045512.2"
 
 
 # ==========================================================================
@@ -434,6 +493,103 @@ class TestDownloadAccessions:
 
         assert summary.downloaded_ok == 3
         assert summary.failed == 0
+
+    @patch.object(EntrezClient, "fetch_batch_fasta")
+    @patch.object(EntrezClient, "fetch_batch_genbank")
+    def test_request_batching_and_artifact_batching(
+        self,
+        mock_batch_gb,
+        mock_batch_fa,
+        db_session,
+        sample_dataset,
+        tmp_path,
+    ):
+        def fasta_batch(chunk):
+            return [
+                EntrezResult(accession=a, file_type="fasta", success=True, data=f">{a}\nATGCATGCATGC\n")
+                for a in chunk
+            ]
+
+        def genbank_batch(chunk):
+            return [
+                EntrezResult(
+                    accession=a,
+                    file_type="genbank",
+                    success=True,
+                    data=(
+                        f"LOCUS       {a}              29903 bp    ss-RNA  linear   VRL 18-JUL-2020\n"
+                        f"ACCESSION   {a.split('.')[0]}\n"
+                        f"VERSION     {a}\n"
+                        "FEATURES             Location/Qualifiers\n"
+                        "     source          1..29903\n"
+                        "ORIGIN\n"
+                        "        1 attaaaggtt tataccttcc caggtaacaa\n"
+                        "//\n"
+                    ),
+                )
+                for a in chunk
+            ]
+
+        mock_batch_fa.side_effect = fasta_batch
+        mock_batch_gb.side_effect = genbank_batch
+
+        client = self._make_client()
+        summary = download_accessions(
+            session=db_session,
+            client=client,
+            accession_ids=["NC_045512.2", "OQ111111.1", "OQ222222.1"],
+            output_dir=str(tmp_path),
+            request_batch_size=2,
+            artifact_batch_size=2,
+            persist_composite_artifacts=True,
+        )
+
+        assert summary.downloaded_ok == 3
+        assert summary.failed == 0
+        assert summary.request_batch_size == 2
+        assert summary.artifact_batch_size == 2
+        assert summary.raw_artifacts_written == 4
+
+        raw_fasta = tmp_path / "batches" / "raw" / "fasta"
+        raw_genbank = tmp_path / "batches" / "raw" / "genbank"
+        assert (raw_fasta / "batch_000001.fasta").exists()
+        assert (raw_fasta / "batch_000002.fasta").exists()
+        assert (raw_genbank / "batch_000001.gb").exists()
+        assert (raw_genbank / "batch_000002.gb").exists()
+
+    @patch.object(EntrezClient, "fetch_batch_fasta")
+    @patch.object(EntrezClient, "fetch_batch_genbank")
+    def test_batch_failure_is_accession_traceable(
+        self,
+        mock_batch_gb,
+        mock_batch_fa,
+        db_session,
+        sample_dataset,
+        tmp_path,
+    ):
+        mock_batch_fa.return_value = [
+            EntrezResult(accession="NC_045512.2", file_type="fasta", success=True, data=SAMPLE_FASTA),
+            EntrezResult(accession="OQ111111.1", file_type="fasta", success=False, error="Not found in batch response"),
+        ]
+        mock_batch_gb.return_value = [
+            EntrezResult(accession="NC_045512.2", file_type="genbank", success=True, data=SAMPLE_GENBANK),
+            EntrezResult(accession="OQ111111.1", file_type="genbank", success=True, data=SAMPLE_GENBANK_2),
+        ]
+
+        client = self._make_client()
+        summary = download_accessions(
+            session=db_session,
+            client=client,
+            accession_ids=["NC_045512.2", "OQ111111.1"],
+            output_dir=str(tmp_path),
+            request_batch_size=2,
+            artifact_batch_size=2,
+            persist_composite_artifacts=True,
+        )
+
+        assert summary.downloaded_ok == 1
+        assert summary.failed == 1
+        assert summary.failures[0]["accession"] == "OQ111111.1"
 
 
 # ==========================================================================

@@ -20,7 +20,12 @@ from gwico_ssr.db.repository import (
     upsert_sequence_record,
 )
 from gwico_ssr.parsers.fasta_parser import ParsedSequence, parse_fasta
-from gwico_ssr.parsers.genbank_parser import GenBankParseResult, ParsedFeature, parse_genbank
+from gwico_ssr.parsers.genbank_parser import (
+    GenBankParseResult,
+    ParsedFeature,
+    parse_genbank,
+    parse_genbank_composite,
+)
 from gwico_ssr.parsers.gff3_parser import GFF3ParseResult, parse_gff3
 
 logger = logging.getLogger(__name__)
@@ -282,6 +287,209 @@ def parse_dataset_accessions(
         if result["genbank_parsed"]:
             summary.genbank_parsed += 1
         elif str(genbank_path) and genbank_path.exists():
+            summary.genbank_failed += 1
+
+        if result["gff3_parsed"]:
+            summary.gff3_parsed += 1
+        elif gff3_path and Path(gff3_path).exists():
+            summary.gff3_failed += 1
+
+        summary.features_inserted += result["features_inserted"]
+        summary.errors.extend(result["errors"])
+
+    return summary
+
+
+# ---------------------------------------------------------------------------
+# Batch-Aware Parsing (Chunk 4)
+# ---------------------------------------------------------------------------
+
+
+def parse_composite_artifact(
+    session: Session,
+    composite_fasta_path: Optional[str | Path] = None,
+    composite_genbank_path: Optional[str | Path] = None,
+    normalization_dir: Optional[str | Path] = None,
+    force: bool = False,
+) -> ParseSummary:
+    """Parse composite FASTA/GenBank artifact and persist all records.
+
+    This is the batch-aware entry point for parsing. It can handle:
+    1. Composite files directly (auto-split via normalization)
+    2. Pre-normalized directories (split files from Chunk 3)
+
+    Args:
+        session: DB session.
+        composite_fasta_path: Path to composite FASTA file (will be split).
+        composite_genbank_path: Path to composite GenBank file (will be split).
+        normalization_dir: If provided and composite files given, split into this dir.
+        force: Re-parse even if already parsed.
+
+    Returns:
+        ParseSummary with counts and errors.
+    """
+    from gwico_ssr.ingest.normalizers import (
+        split_composite_fasta,
+        split_composite_genbank,
+    )
+
+    summary = ParseSummary()
+    normalized_fasta_files = {}  # accession -> path
+    normalized_genbank_files = {}  # accession -> path
+
+    # Handle composite FASTA
+    if composite_fasta_path:
+        composite_fasta_path = Path(composite_fasta_path)
+        if not normalization_dir:
+            normalization_dir = composite_fasta_path.parent / "normalized"
+
+        split_result = split_composite_fasta(
+            composite_fasta_path,
+            normalization_dir,
+            overwrite=force,
+        )
+
+        for rec in split_result.normalized_records:
+            normalized_fasta_files[rec["accession"]] = rec["output_path"]
+
+        for err in split_result.errors:
+            summary.errors.append({
+                "source": "composite_fasta",
+                "accession": err.get("accession"),
+                "message": err.get("message", str(err)),
+            })
+
+    # Handle composite GenBank
+    if composite_genbank_path:
+        composite_genbank_path = Path(composite_genbank_path)
+        if not normalization_dir:
+            normalization_dir = composite_genbank_path.parent / "normalized"
+
+        split_result = split_composite_genbank(
+            composite_genbank_path,
+            normalization_dir,
+            overwrite=force,
+        )
+
+        for rec in split_result.normalized_records:
+            normalized_genbank_files[rec["accession"]] = rec["output_path"]
+
+        for err in split_result.errors:
+            summary.errors.append({
+                "source": "composite_genbank",
+                "accession": err.get("accession"),
+                "message": err.get("message", str(err)),
+            })
+
+    # Parse all normalized files
+    all_accessions = set(normalized_fasta_files.keys()) | set(
+        normalized_genbank_files.keys()
+    )
+    summary.total_accessions = len(all_accessions)
+
+    for acc in all_accessions:
+        fasta_path = normalized_fasta_files.get(acc)
+        genbank_path = normalized_genbank_files.get(acc)
+
+        result = parse_and_persist(
+            session=session,
+            accession=acc,
+            fasta_path=fasta_path,
+            genbank_path=genbank_path,
+            gff3_path=None,
+            force=force,
+        )
+
+        if result.get("skipped"):
+            continue
+
+        if result["fasta_parsed"]:
+            summary.fasta_parsed += 1
+        elif fasta_path:
+            summary.fasta_failed += 1
+
+        if result["genbank_parsed"]:
+            summary.genbank_parsed += 1
+        elif genbank_path:
+            summary.genbank_failed += 1
+
+        summary.features_inserted += result["features_inserted"]
+        summary.errors.extend(result["errors"])
+
+    return summary
+
+
+def parse_batch_directory(
+    session: Session,
+    batch_dir: str | Path,
+    file_type: str = "fasta",
+    gff3_dir: Optional[str | Path] = None,
+    force: bool = False,
+) -> ParseSummary:
+    """Parse all normalized files in a batch directory.
+
+    Looks for normalized single-record files in batch_dir/{file_type}/*.{fasta,gb}.
+
+    Args:
+        session: DB session.
+        batch_dir: Directory containing normalized files.
+        file_type: "fasta" or "genbank" (or "both").
+        gff3_dir: Optional directory containing GFF3 files.
+        force: Re-parse even if already parsed.
+
+    Returns:
+        ParseSummary with counts and errors.
+    """
+    batch_dir = Path(batch_dir)
+    summary = ParseSummary()
+
+    # Collect all accessions from available file types
+    accessions_to_parse = set()
+
+    if file_type in ("fasta", "both"):
+        fasta_dir = batch_dir / "fasta"
+        if fasta_dir.exists():
+            for fasta_file in fasta_dir.glob("*.fasta"):
+                accession = fasta_file.stem
+                accessions_to_parse.add(accession)
+
+    if file_type in ("genbank", "both"):
+        genbank_dir = batch_dir / "genbank"
+        if genbank_dir.exists():
+            for gb_file in genbank_dir.glob("*.gb"):
+                accession = gb_file.stem
+                accessions_to_parse.add(accession)
+
+    summary.total_accessions = len(accessions_to_parse)
+
+    # Parse each accession
+    for acc in sorted(accessions_to_parse):
+        fasta_path = batch_dir / "fasta" / f"{acc}.fasta"
+        genbank_path = batch_dir / "genbank" / f"{acc}.gb"
+        gff3_path = None
+        if gff3_dir:
+            gff3_path = str(Path(gff3_dir) / f"{acc}.gff3")
+
+        result = parse_and_persist(
+            session=session,
+            accession=acc,
+            fasta_path=str(fasta_path) if fasta_path.exists() else None,
+            genbank_path=str(genbank_path) if genbank_path.exists() else None,
+            gff3_path=gff3_path,
+            force=force,
+        )
+
+        if result.get("skipped"):
+            continue
+
+        if result["fasta_parsed"]:
+            summary.fasta_parsed += 1
+        elif fasta_path.exists():
+            summary.fasta_failed += 1
+
+        if result["genbank_parsed"]:
+            summary.genbank_parsed += 1
+        elif genbank_path.exists():
             summary.genbank_failed += 1
 
         if result["gff3_parsed"]:

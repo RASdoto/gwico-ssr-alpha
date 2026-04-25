@@ -120,6 +120,9 @@ def parse_genbank(file_path: str | Path) -> GenBankParseResult:
     coordinates and strand. For compound/join locations, uses the overall
     span (min start, max end).
 
+    NOTE: This function expects a single-record GenBank file and processes
+    only the first record. For multi-record files, use parse_genbank_composite().
+
     Args:
         file_path: Path to the GenBank file.
 
@@ -155,6 +158,15 @@ def parse_genbank(file_path: str | Path) -> GenBankParseResult:
                 "message": "No records found in GenBank file",
             })
             return result
+
+        if len(records) > 1:
+            result.errors.append({
+                "file_path": str(file_path),
+                "accession": None,
+                "message": f"Multi-record GenBank file detected ({len(records)} records). "
+                          "Use parse_genbank_composite() to split composite files. "
+                          "Processing first record only for backward compatibility.",
+            })
 
         record = records[0]
         accession = record.id if record.id and record.id != "<unknown id>" else record.name
@@ -236,6 +248,136 @@ def parse_genbank(file_path: str | Path) -> GenBankParseResult:
     return result
 
 
+def parse_genbank_composite(file_path: str | Path) -> list[GenBankParseResult]:
+    """Parse a composite (multi-record) GenBank file and extract all records.
+
+    This function processes all records in a GenBank file, each in its own
+    GenBankParseResult. Use this for batch files containing multiple accessions.
+
+    Args:
+        file_path: Path to the GenBank file (may contain multiple records).
+
+    Returns:
+        List of GenBankParseResult, one per record in the file.
+    """
+    file_path = Path(file_path)
+    results = []
+
+    if not file_path.exists():
+        error_result = GenBankParseResult(file_path=str(file_path))
+        error_result.errors.append({
+            "file_path": str(file_path),
+            "accession": None,
+            "message": f"File not found: {file_path}",
+        })
+        return [error_result]
+
+    if file_path.stat().st_size == 0:
+        error_result = GenBankParseResult(file_path=str(file_path))
+        error_result.errors.append({
+            "file_path": str(file_path),
+            "accession": None,
+            "message": "File is empty",
+        })
+        return [error_result]
+
+    try:
+        records = list(SeqIO.parse(str(file_path), "genbank"))
+        if not records:
+            error_result = GenBankParseResult(file_path=str(file_path))
+            error_result.errors.append({
+                "file_path": str(file_path),
+                "accession": None,
+                "message": "No records found in GenBank file",
+            })
+            return [error_result]
+
+        for record_idx, record in enumerate(records):
+            result = GenBankParseResult(file_path=str(file_path))
+            accession = record.id if record.id and record.id != "<unknown id>" else record.name
+
+            # Sequence info
+            seq_str = str(record.seq) if record.seq else ""
+            seq_hash = hashlib.sha256(seq_str.upper().encode("ascii", errors="ignore")).hexdigest() if seq_str else None
+            gc = _compute_gc_content(seq_str) if seq_str else None
+
+            # Check topology for circularity
+            is_circular = False
+            annotations = getattr(record, "annotations", {})
+            topology = annotations.get("topology", "")
+            if topology == "circular":
+                is_circular = True
+
+            organism = annotations.get("organism", None)
+
+            result.sequence_info = GenBankSequenceInfo(
+                accession=accession,
+                sequence_length=len(seq_str) if seq_str else 0,
+                sequence_hash=seq_hash,
+                gc_content=gc,
+                is_circular=is_circular,
+                organism=organism,
+                description=record.description or "",
+            )
+
+            # Extract features
+            for feature in record.features:
+                if feature.type not in FEATURE_TYPES_OF_INTEREST:
+                    continue
+
+                try:
+                    start = int(feature.location.start)
+                    end = int(feature.location.end)
+                    strand = _normalize_strand(feature.location.strand)
+
+                    gene_name = _extract_qualifier(feature, "gene", "gene_synonym")
+                    product = _extract_qualifier(feature, "product")
+                    locus_tag = _extract_qualifier(feature, "locus_tag")
+
+                    parsed_feat = ParsedFeature(
+                        accession=accession,
+                        feature_type=feature.type,
+                        start=start,
+                        end=end,
+                        strand=strand,
+                        gene_name=gene_name,
+                        product=product,
+                        locus_tag=locus_tag,
+                        annotation_source="genbank",
+                    )
+                    result.features.append(parsed_feat)
+
+                except Exception as e:
+                    result.errors.append({
+                        "file_path": str(file_path),
+                        "accession": accession,
+                        "message": f"Error parsing feature {feature.type}: {e}",
+                    })
+
+            logger.debug(
+                "Parsed GenBank composite record %d/%d: %s (%d bp, %d features, %d CDS)",
+                record_idx + 1,
+                len(records),
+                accession,
+                result.sequence_info.sequence_length,
+                result.feature_count,
+                result.cds_count,
+            )
+
+            results.append(result)
+
+    except Exception as e:
+        error_result = GenBankParseResult(file_path=str(file_path))
+        error_result.errors.append({
+            "file_path": str(file_path),
+            "accession": None,
+            "message": f"Error reading GenBank file: {e}",
+        })
+        return [error_result]
+
+    return results
+
+
 def parse_genbank_multi(file_paths: Sequence[str | Path]) -> list[GenBankParseResult]:
     """Parse multiple GenBank files.
 
@@ -246,3 +388,4 @@ def parse_genbank_multi(file_paths: Sequence[str | Path]) -> list[GenBankParseRe
         List of GenBankParseResult, one per file.
     """
     return [parse_genbank(fp) for fp in file_paths]
+

@@ -11,6 +11,7 @@ from gwico_ssr.parsers.genbank_parser import (
     GenBankSequenceInfo,
     ParsedFeature,
     parse_genbank,
+    parse_genbank_composite,
 )
 from gwico_ssr.parsers.gff3_parser import (
     GFF3ParseResult,
@@ -19,6 +20,8 @@ from gwico_ssr.parsers.gff3_parser import (
 from gwico_ssr.parsers.persist import (
     ParseSummary,
     parse_and_persist,
+    parse_batch_directory,
+    parse_composite_artifact,
     parse_dataset_accessions,
 )
 
@@ -32,8 +35,11 @@ __all__ = [
     "ParsedFeature",
     "ParsedSequence",
     "parse_and_persist",
+    "parse_batch_directory",
+    "parse_composite_artifact",
     "parse_dataset_accessions",
     "parse_fasta",
     "parse_genbank",
+    "parse_genbank_composite",
     "parse_gff3",
 ]

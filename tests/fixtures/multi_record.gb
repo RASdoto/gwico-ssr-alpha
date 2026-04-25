@@ -1,0 +1,50 @@
+LOCUS       NC_045512                29903 bp    DNA     linear   VRL 13-AUG-2020
+DEFINITION  Severe acute respiratory syndrome coronavirus 2 isolate
+            Wuhan-Hu-1, complete genome.
+ACCESSION   NC_045512
+VERSION     NC_045512.2
+KEYWORDS    .
+SOURCE      Severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2)
+  ORGANISM  Severe acute respiratory syndrome coronavirus 2
+FEATURES             Location/Qualifiers
+     source          1..100
+                     /organism="Severe acute respiratory syndrome coronavirus 2"
+                     /mol_type="genomic RNA"
+                     /strain="Wuhan-Hu-1"
+                     /db_xref="taxon:2697049"
+                     /country="China"
+                     /isolation_source="Bronchoalveolar lavage fluid"
+                     /collection_date="2019-12"
+     CDS             15..85
+                     /gene="ORF1ab"
+                     /locus_tag="GU280_gp01"
+                     /product="ORF1ab polyprotein"
+ORIGIN
+        1 attaaaggtt tataccttcc caggtaacaa accaaccaac tttcgatctc ttgtagatct
+       61 gttctctaaa cgggctgtta ctgaaactga attgagcacg
+//
+LOCUS       OL672836                29815 bp    DNA     linear   VRL 26-AUG-2021
+DEFINITION  SARS-CoV-2 isolate example, complete genome.
+ACCESSION   OL672836
+VERSION     OL672836.1
+KEYWORDS    .
+SOURCE      Severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2)
+  ORGANISM  Severe acute respiratory syndrome coronavirus 2
+FEATURES             Location/Qualifiers
+     source          1..100
+                     /organism="Severe acute respiratory syndrome coronavirus 2"
+                     /mol_type="genomic RNA"
+                     /strain="example_strain"
+                     /db_xref="taxon:2697049"
+                     /country="USA"
+                     /collection_date="2021-08"
+     CDS             15..85
+                     /gene="ORF1ab"
+                     /locus_tag="GU281_gp01"
+                     /product="ORF1ab polyprotein"
+     gene            15..85
+                     /gene="ORF1ab"
+ORIGIN
+        1 gcatgctcag tatgactgac tgagtagtga tgagtgtgac gcagaccttg agggagctac
+       61 tgtagctagc tactagcact agtagtagta aggaatacat
+//

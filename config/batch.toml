@@ -12,6 +12,7 @@ email = ""         # Required by NCBI Entrez
 max_retries = 5    # More retries for large downloads
 rate_limit = 10.0  # Use 10/sec if you have an API key, 3/sec otherwise
 batch_size = 500
+request_batch_size = 500
 
 [ssr]
 # Default PERF-compatible thresholds
@@ -29,3 +30,18 @@ file = "gwico_ssr_batch.log"   # Log to file for batch runs
 
 [output]
 dir = "outputs"
+
+[batch]
+artifact_batch_size = 10000
+parse_chunk_size = 2000
+retain_raw_artifacts = true
+manifest_policy = "required"
+duplicate_handling = "error"
+
+[detector]
+# Chunk 5: IMEX-compatible detector configuration
+detector_mode = "perfect"                    # perfect, imperfect (Chunk 6), compound (Chunk 7)
+imperfection_threshold_pct = 5.0             # Max % mismatch for imperfect detection
+indel_max_size = 1                           # Max bp per indel event
+compound_dmax_bp = 10                        # Max gap between compound components
+standardization_level = "L2"                 # L0, L1, L2, Full

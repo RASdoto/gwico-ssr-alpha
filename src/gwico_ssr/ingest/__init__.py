@@ -8,11 +8,14 @@ from gwico_ssr.ingest.csv_loader import (
     validate_header,
 )
 from gwico_ssr.ingest.normalizers import (
+    CompositeNormalizationResult,
     normalize_accession,
     normalize_completeness,
     normalize_date,
     normalize_geo_location,
     normalize_length,
+    split_composite_fasta,
+    split_composite_genbank,
 )
 
 __all__ = [
@@ -26,4 +29,7 @@ __all__ = [
     "normalize_date",
     "normalize_geo_location",
     "normalize_length",
+    "CompositeNormalizationResult",
+    "split_composite_fasta",
+    "split_composite_genbank",
 ]

@@ -25,7 +25,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class AccessionMetricsResult:
-    """Computed metrics for a single accession."""
+    """Computed metrics for a single accession.
+    
+    Chunk 8: Includes repeat_class breakdowns for batch-aware downstream analysis.
+    """
 
     accession: str
     ssr_count_total: int = 0
@@ -41,9 +44,19 @@ class AccessionMetricsResult:
     dominant_motif: str | None = None
     genome_length: int | None = None
     gc_content: float | None = None
+    # Chunk 8: Repeat class breakdowns
+    perfect_count: int = 0
+    imperfect_count: int = 0
+    compound_component_count: int = 0
+    perfect_bp_total: int = 0
+    imperfect_bp_total: int = 0
+    compound_component_bp_total: int = 0
 
     def to_dict(self, run_id: int) -> dict:
-        """Convert to dict suitable for upsert_accession_metrics."""
+        """Convert to dict suitable for upsert_accession_metrics.
+        
+        Chunk 8: Includes repeat_class breakdown fields.
+        """
         return {
             "accession": self.accession,
             "run_id": run_id,
@@ -58,6 +71,12 @@ class AccessionMetricsResult:
             "penta_count": self.penta_count,
             "hexa_count": self.hexa_count,
             "dominant_motif": self.dominant_motif,
+            "perfect_count": self.perfect_count,
+            "imperfect_count": self.imperfect_count,
+            "compound_component_count": self.compound_component_count,
+            "perfect_bp_total": self.perfect_bp_total,
+            "imperfect_bp_total": self.imperfect_bp_total,
+            "compound_component_bp_total": self.compound_component_bp_total,
         }
 
 
@@ -102,6 +121,53 @@ def compute_dominant_motif(ssr_records) -> str | None:
 
 
 # ---------------------------------------------------------------------------
+# Chunk 8: Repeat class breakdown helpers
+# ---------------------------------------------------------------------------
+
+def compute_repeat_class_breakdown(ssr_records) -> dict[str, int]:
+    """Count SSRs by repeat_class.
+    
+    Returns dict with keys: perfect_count, imperfect_count, compound_component_count.
+    """
+    counts = {
+        "perfect_count": 0,
+        "imperfect_count": 0,
+        "compound_component_count": 0,
+    }
+    for ssr in ssr_records:
+        repeat_class = getattr(ssr, "repeat_class", "perfect")  # backward compat
+        if repeat_class == "perfect":
+            counts["perfect_count"] += 1
+        elif repeat_class == "imperfect":
+            counts["imperfect_count"] += 1
+        elif repeat_class == "compound_component":
+            counts["compound_component_count"] += 1
+    return counts
+
+
+def compute_repeat_class_bp_breakdown(ssr_records) -> dict[str, int]:
+    """Sum repeat_length_bp by repeat_class.
+    
+    Returns dict with keys: perfect_bp_total, imperfect_bp_total, compound_component_bp_total.
+    """
+    bp_totals = {
+        "perfect_bp_total": 0,
+        "imperfect_bp_total": 0,
+        "compound_component_bp_total": 0,
+    }
+    for ssr in ssr_records:
+        repeat_class = getattr(ssr, "repeat_class", "perfect")  # backward compat
+        bp = ssr.repeat_length_bp
+        if repeat_class == "perfect":
+            bp_totals["perfect_bp_total"] += bp
+        elif repeat_class == "imperfect":
+            bp_totals["imperfect_bp_total"] += bp
+        elif repeat_class == "compound_component":
+            bp_totals["compound_component_bp_total"] += bp
+    return bp_totals
+
+
+# ---------------------------------------------------------------------------
 # RA / RD formulas
 # ---------------------------------------------------------------------------
 
@@ -136,6 +202,8 @@ def compute_accession_metrics(
     gc_content: float | None = None,
 ) -> AccessionMetricsResult:
     """Compute all metrics for a single accession from its SSR records.
+    
+    Chunk 8: Includes repeat_class breakdown computation.
 
     Args:
         accession: Accession identifier.
@@ -144,7 +212,7 @@ def compute_accession_metrics(
         gc_content: GC content from Accession.
 
     Returns:
-        AccessionMetricsResult with all computed metrics.
+        AccessionMetricsResult with all computed metrics, including class breakdowns.
     """
     ssr_list = list(ssr_records)
 
@@ -155,6 +223,10 @@ def compute_accession_metrics(
     dominant = compute_dominant_motif(ssr_list)
     ra = compute_ra(ssr_count_total, genome_length)
     rd = compute_rd(ssr_bp_total, genome_length)
+    
+    # Chunk 8: Compute repeat class breakdowns
+    class_counts = compute_repeat_class_breakdown(ssr_list)
+    class_bp_totals = compute_repeat_class_bp_breakdown(ssr_list)
 
     return AccessionMetricsResult(
         accession=accession,
@@ -166,6 +238,8 @@ def compute_accession_metrics(
         genome_length=genome_length,
         gc_content=gc_content,
         **size_counts,
+        **class_counts,
+        **class_bp_totals,
     )
 
 

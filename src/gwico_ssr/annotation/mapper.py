@@ -44,7 +44,10 @@ class FeatureInterval:
 
 @dataclass
 class SSRAnnotationRecord:
-    """An SSR-to-feature annotation result ready for persistence."""
+    """An SSR-to-feature annotation result ready for persistence.
+    
+    Chunk 8: Now includes repeat_class for batch-aware downstream processing.
+    """
 
     ssr_id: int
     accession: str
@@ -52,6 +55,7 @@ class SSRAnnotationRecord:
     gene_name: str | None
     region_class: str   # CDS, gene, mRNA, intergenic, other
     overlap_bp: int | None
+    repeat_class: str = "perfect"  # perfect, imperfect, compound_component
 
 
 @dataclass
@@ -65,7 +69,10 @@ class AnnotationResult:
     annotations: list[SSRAnnotationRecord] = field(default_factory=list)
 
     def to_dicts(self) -> list[dict]:
-        """Convert annotations to dicts suitable for insert_ssr_annotations."""
+        """Convert annotations to dicts suitable for insert_ssr_annotations.
+        
+        Chunk 8: Includes repeat_class for batch-aware downstream operations.
+        """
         return [
             {
                 "ssr_id": a.ssr_id,
@@ -74,6 +81,7 @@ class AnnotationResult:
                 "gene_name": a.gene_name,
                 "region_class": a.region_class,
                 "overlap_bp": a.overlap_bp,
+                "repeat_class": a.repeat_class,
             }
             for a in self.annotations
         ]
@@ -160,19 +168,24 @@ def annotate_ssrs(
 
     Each SSR may overlap zero or more features (one-to-many).
     SSRs with no overlapping features are classified as intergenic.
+    
+    Chunk 8: Propagates repeat_class from SSRRecord to annotations.
 
     Args:
         ssr_records: Sequence of SSRRecord ORM objects (must have ssr_id,
-            start, end attributes).
+            start, end, repeat_class attributes).
         feature_tree: Pre-built IntervalTree from build_feature_tree().
         accession: Accession identifier.
 
     Returns:
-        AnnotationResult with all annotation records.
+        AnnotationResult with all annotation records, including repeat_class.
     """
     result = AnnotationResult(accession=accession, total_ssrs=len(ssr_records))
 
     for ssr in ssr_records:
+        # Get repeat_class from SSR record; default to "perfect" for backward compatibility
+        repeat_class = getattr(ssr, "repeat_class", "perfect")
+        
         overlaps = feature_tree.overlap(ssr.start, ssr.end)
 
         if not overlaps:
@@ -184,6 +197,7 @@ def annotate_ssrs(
                 gene_name=None,
                 region_class="intergenic",
                 overlap_bp=None,
+                repeat_class=repeat_class,
             ))
             result.intergenic += 1
         else:
@@ -199,6 +213,7 @@ def annotate_ssrs(
                     gene_name=feat.gene_name,
                     region_class=_classify_region(feat.feature_type),
                     overlap_bp=overlap_bp,
+                    repeat_class=repeat_class,
                 ))
             result.annotated += 1
 

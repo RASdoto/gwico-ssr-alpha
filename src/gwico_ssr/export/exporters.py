@@ -93,7 +93,10 @@ def export_ssrs_csv(
     country: str | None = None,
     motif: str | None = None,
 ) -> Path:
-    """Export SSR records to CSV."""
+    """Export SSR records to CSV.
+    
+    Chunk 8: Includes repeat_class for downstream batch-aware processing.
+    """
     out = _ensure_dir(output_dir)
     path = out / "ssr_records.csv"
 
@@ -109,13 +112,16 @@ def export_ssrs_csv(
             "ssr_id", "accession", "start", "end", "motif_raw",
             "motif_canonical", "repeat_units", "motif_size",
             "repeat_length_bp", "strand", "actual_repeat", "detector_version",
+            "repeat_class", "is_perfect", "imperfection_pct",
         ])
         for r in rows:
             writer.writerow([
                 r.ssr_id, r.accession, r.start, r.end, r.motif_raw,
                 r.motif_canonical, r.repeat_units, r.motif_size,
                 r.repeat_length_bp, r.strand, r.actual_repeat,
-                r.detector_version,
+                r.detector_version, getattr(r, "repeat_class", "perfect"),
+                getattr(r, "is_perfect", True),
+                getattr(r, "imperfection_pct", None),
             ])
     return path
 
@@ -126,7 +132,10 @@ def export_metrics_csv(
     *,
     run_id: int | None = None,
 ) -> Path:
-    """Export per-accession metrics to CSV."""
+    """Export per-accession metrics to CSV.
+    
+    Chunk 8: Includes repeat_class breakdown fields for batch-aware analysis.
+    """
     out = _ensure_dir(output_dir)
     path = out / "accession_metrics.csv"
 
@@ -142,12 +151,20 @@ def export_metrics_csv(
             "accession", "run_id", "ssr_count_total", "ssr_bp_total",
             "ra", "rd", "mono_count", "di_count", "tri_count",
             "tetra_count", "penta_count", "hexa_count", "dominant_motif",
+            "perfect_count", "imperfect_count", "compound_component_count",
+            "perfect_bp_total", "imperfect_bp_total", "compound_component_bp_total",
         ])
         for m in rows:
             writer.writerow([
                 m.accession, m.run_id, m.ssr_count_total, m.ssr_bp_total,
                 m.ra, m.rd, m.mono_count, m.di_count, m.tri_count,
                 m.tetra_count, m.penta_count, m.hexa_count, m.dominant_motif,
+                getattr(m, "perfect_count", 0),
+                getattr(m, "imperfect_count", 0),
+                getattr(m, "compound_component_count", 0),
+                getattr(m, "perfect_bp_total", 0),
+                getattr(m, "imperfect_bp_total", 0),
+                getattr(m, "compound_component_bp_total", 0),
             ])
     return path
 
@@ -198,7 +215,10 @@ def export_ssrs_json(
     country: str | None = None,
     motif: str | None = None,
 ) -> Path:
-    """Export SSR records to JSON."""
+    """Export SSR records to JSON.
+    
+    Chunk 8: Includes repeat_class and imperfection fields.
+    """
     out = _ensure_dir(output_dir)
     path = out / "ssr_records.json"
 
@@ -222,6 +242,9 @@ def export_ssrs_json(
             "strand": r.strand,
             "actual_repeat": r.actual_repeat,
             "detector_version": r.detector_version,
+            "repeat_class": getattr(r, "repeat_class", "perfect"),
+            "is_perfect": getattr(r, "is_perfect", True),
+            "imperfection_pct": getattr(r, "imperfection_pct", None),
         }
         for r in rows
     ]
@@ -326,6 +349,8 @@ def export_ssrs_gff3(
 
     GFF3 uses 1-based, fully-closed coordinates.
     SSRRecord stores 0-based, half-open → convert: start+1, end unchanged.
+    
+    Chunk 8: Includes repeat_class in attributes.
     """
     out = _ensure_dir(output_dir)
     path = out / "ssr_records.gff3"
@@ -350,10 +375,13 @@ def export_ssrs_gff3(
                 f"motif_canonical={r.motif_canonical};"
                 f"motif_size={r.motif_size};"
                 f"repeat_units={r.repeat_units};"
-                f"repeat_length_bp={r.repeat_length_bp}"
+                f"repeat_length_bp={r.repeat_length_bp};"
+                f"repeat_class={getattr(r, 'repeat_class', 'perfect')}"
             )
             if r.actual_repeat:
                 attrs += f";actual_repeat={r.actual_repeat}"
+            if hasattr(r, "imperfection_pct") and r.imperfection_pct is not None:
+                attrs += f";imperfection_pct={r.imperfection_pct}"
             f.write(
                 f"{r.accession}\tgwico-ssr\tmicrosatellite\t{gff_start}\t{gff_end}"
                 f"\t{r.repeat_length_bp}\t{strand}\t.\t{attrs}\n"

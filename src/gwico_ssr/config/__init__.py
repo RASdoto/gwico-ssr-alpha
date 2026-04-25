@@ -63,6 +63,10 @@ class NCBISettings(BaseSettings):
     max_retries: int = Field(default=3, description="Maximum download retries")
     rate_limit: float = Field(default=3.0, description="Requests per second (10 with API key)")
     batch_size: int = Field(default=500, description="Accessions per Entrez batch")
+    request_batch_size: int = Field(
+        default=500,
+        description="Accessions per API retrieval request (batch-first foundation)",
+    )
 
     model_config = {"env_prefix": "GWICO_SSR_NCBI_"}
 
@@ -103,12 +107,74 @@ class OutputSettings(BaseSettings):
     model_config = {"env_prefix": "GWICO_SSR_OUTPUT_"}
 
 
+class BatchSettings(BaseSettings):
+    artifact_batch_size: int = Field(
+        default=10000,
+        description="Target accession records per persisted composite artifact",
+    )
+    parse_chunk_size: int = Field(
+        default=1000,
+        description="Records per downstream parse chunk",
+    )
+    retain_raw_artifacts: bool = Field(
+        default=True,
+        description="Retain downloaded composite artifacts after normalization",
+    )
+    manifest_policy: str = Field(
+        default="required",
+        description="Manifest generation policy for batch provenance",
+    )
+    duplicate_handling: str = Field(
+        default="error",
+        description="Duplicate accession policy during batch normalization",
+    )
+
+    model_config = {"env_prefix": "GWICO_SSR_BATCH_"}
+
+
+class DetectorSettings(BaseSettings):
+    """Chunk 5: Configuration for IMEX-compatible SSR detection modes."""
+
+    detector_mode: str = Field(
+        default="perfect",
+        description="Detection mode: perfect (alpha), imperfect (Chunk 6), or compound (Chunk 7)",
+    )
+    imperfection_threshold_pct: float = Field(
+        default=5.0,
+        description="Max % mismatch allowed for imperfect detection (Chunk 6)",
+    )
+    indel_max_size: int = Field(
+        default=1,
+        description="Max bp per indel event in imperfect detection (Chunk 6)",
+    )
+    compound_dmax_bp: int = Field(
+        default=10,
+        description="Max gap between compound SSR components (Chunk 7)",
+    )
+    standardization_level: str = Field(
+        default="L2",
+        description="Motif standardization level: L0, L1, L2, or Full (Chunk 7)",
+    )
+
+    model_config = {"env_prefix": "GWICO_SSR_DETECTOR_"}
+
+    def validate_mode(self) -> bool:
+        """Validate detector mode is valid."""
+        return self.detector_mode in ("perfect", "imperfect", "compound")
+
+    def validate_standardization_level(self) -> bool:
+        """Validate standardization level is valid."""
+        return self.standardization_level in ("L0", "L1", "L2", "Full")
+
+
 class Settings(BaseSettings):
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     ncbi: NCBISettings = Field(default_factory=NCBISettings)
     ssr: SSRSettings = Field(default_factory=SSRSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     output: OutputSettings = Field(default_factory=OutputSettings)
+    batch: BatchSettings = Field(default_factory=BatchSettings)
+    detector: DetectorSettings = Field(default_factory=DetectorSettings)
 
     model_config = {"env_prefix": "GWICO_SSR_"}
 
@@ -131,6 +197,8 @@ def load_settings(config_path: Optional[str] = None) -> Settings:
     ssr_data = toml_data.get("ssr", {})
     log_data = toml_data.get("logging", {})
     output_data = toml_data.get("output", {})
+    batch_data = toml_data.get("batch", {})
+    detector_data = toml_data.get("detector", {})
 
     return Settings(
         database=DatabaseSettings(**db_data),
@@ -138,4 +206,6 @@ def load_settings(config_path: Optional[str] = None) -> Settings:
         ssr=SSRSettings(**ssr_data),
         logging=LoggingSettings(**log_data),
         output=OutputSettings(**output_data),
+        batch=BatchSettings(**batch_data),
+        detector=DetectorSettings(**detector_data),
     )

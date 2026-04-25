@@ -76,6 +76,50 @@ python -m gwico_ssr run demo --resume <RUN_ID>
 python -m gwico_ssr run demo --data-dir data/demo --dry-run
 ```
 
+## Chunk 0 Baseline Lock
+
+The alpha-to-beta implementation baseline for this repository is recorded in [docs/architecture/chunk0_baseline_lock.md](docs/architecture/chunk0_baseline_lock.md).
+
+That document is the audit anchor for later batch-first work and explicitly records:
+
+- the current alpha CLI, configuration, downloader, parser, ORM, orchestration, analysis, visualization, and test baselines,
+- the fact that alpha still assumes accession-level downloads and does not support composite GenBank as a first-class workflow input,
+- the compatibility rules that preserve perfect-only alpha behavior,
+- and the explicit gap list between the current alpha implementation and the target batch-first beta workflow.
+
+### Alpha Compatibility Rules
+
+The following rules apply to all later chunks:
+
+1. Perfect-only alpha SSR behavior must remain reproducible.
+2. The existing accession-level workflow remains supported as a compatibility path.
+3. Batch-first infrastructure must be added before imperfect and compound detector expansion becomes the intended large-cohort path.
+4. Request batch size, persisted artifact batch size, and downstream parse chunk size must remain separate concepts.
+5. IMEx is the semantic reference model for imperfect and compound detection, not the runtime engine.
+
+## Chunk 1 Batch Foundation
+
+Chunk 1 adds configuration and schema foundations for batch-first workflows while preserving alpha runtime behavior.
+
+Batch terminology is now explicit and separate:
+
+1. API request batch size: `ncbi.request_batch_size` (recommended `500`)
+2. Persisted composite artifact batch size: `batch.artifact_batch_size` (recommended `10000` for million-accession SARS-CoV-2 scale runs)
+3. Downstream parse chunk size: `batch.parse_chunk_size` (stream-oriented implementation control)
+
+Batch foundation details are documented in [docs/architecture/chunk1_batch_foundation.md](docs/architecture/chunk1_batch_foundation.md).
+
+## Chunk 2 Batch Download
+
+Chunk 2 enables configurable request batching and persisted composite artifact batching in acquisition while preserving accession-level compatibility outputs.
+
+- Request batching uses `ncbi.request_batch_size`.
+- Composite artifact batching uses `batch.artifact_batch_size`.
+- Raw artifacts are written deterministically under `outputs/batches/raw/`.
+- Accession-level retry behavior remains explicit via retry manifests.
+
+Chunk 2 details are documented in [docs/architecture/chunk2_batch_download.md](docs/architecture/chunk2_batch_download.md).
+
 ## Configuration
 
 Configuration is loaded in priority order:
@@ -167,7 +211,7 @@ gwico-ssr/
     export/               # Multi-format export + provenance
     orchestration/        # Pipeline orchestration + checkpointing
     utils/                # Shared helpers
-  tests/                  # 490 tests (unit, integration, benchmark)
+  tests/                  # 491 tests (unit, integration, benchmark)
   docs/                   # Architecture, methods, validation docs
 ```
 

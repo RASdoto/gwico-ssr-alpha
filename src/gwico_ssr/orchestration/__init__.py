@@ -1,5 +1,11 @@
 """Orchestration, checkpointing, and recovery for GWICO-SSR pipeline."""
 
+from gwico_ssr.orchestration.batch_foundation import (
+    BatchFoundationPlan,
+    build_batch_foundation_plan,
+    make_artifact_base_dir,
+)
+
 from gwico_ssr.orchestration.pipeline import (
     CORE_STAGES,
     STAGE_ORDER,
@@ -21,8 +27,11 @@ from gwico_ssr.orchestration.pipeline import (
 )
 
 __all__ = [
+    "BatchFoundationPlan",
     "CORE_STAGES",
     "STAGE_ORDER",
+    "build_batch_foundation_plan",
+    "make_artifact_base_dir",
     "PipelineOrchestrator",
     "PipelineResult",
     "PipelineStage",

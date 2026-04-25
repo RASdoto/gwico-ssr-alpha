@@ -25,10 +25,20 @@ def test_create_all_tables(tmp_path):
         "feature_records",
         "ssr_records",
         "ssr_annotations",
+        "compound_ssrs",  # Chunk 5: IMEX compound SSRs
+        "compound_ssr_components",  # Chunk 5: IMEX compound components
         "accession_metrics",
         "statistical_results",
+        "batch_artifacts",
+        "batch_normalized_records",
         "stage_checkpoints",
         "failed_accessions",
+        "lineage_sources",  # Chunk 10: Lineage reference sources
+        "lineage_assignments",  # Chunk 10: Accession-to-lineage mappings
+        "lineage_metrics",  # Chunk 10: Aggregated lineage metrics
+        "tree_sources",  # Chunk 11: Phylogenetic tree sources
+        "tree_mappings",  # Chunk 11: Accession-to-tip mappings
+        "tree_metrics",  # Chunk 11: Aggregated tree clade metrics
     }
     assert expected == table_names
 
@@ -60,6 +70,15 @@ def test_indexes_exist(tmp_path):
     unique_constraints = inspector.get_unique_constraints("accession_metrics")
     uq_names = {uc["name"] for uc in unique_constraints}
     assert "uq_accession_metrics_acc_run" in uq_names
+
+    # Batch foundation unique constraints
+    batch_uq = inspector.get_unique_constraints("batch_artifacts")
+    batch_uq_names = {uc["name"] for uc in batch_uq}
+    assert "uq_batch_artifacts_artifact_path" in batch_uq_names
+
+    norm_uq = inspector.get_unique_constraints("batch_normalized_records")
+    norm_uq_names = {uc["name"] for uc in norm_uq}
+    assert "uq_batch_norm_artifact_acc_record" in norm_uq_names
 
 
 def test_foreign_keys_enabled(tmp_path):
@@ -108,10 +127,14 @@ def test_column_counts(tmp_path):
         "accessions": 13,
         "sequence_records": 9,
         "feature_records": 10,
-        "ssr_records": 13,
-        "ssr_annotations": 7,
-        "accession_metrics": 14,  # id + accession + run_id + 11 metric fields
+        "ssr_records": 19,  # Chunk 5: Added 6 imperfection fields
+        "ssr_annotations": 8,  # Chunk 8: Added repeat_class field
+        "compound_ssrs": 10,  # Chunk 5: IMEX compound SSRs (compound_id, run_id, accession, start, end, component_count, total_repeat_length_bp, dmax_used, standardization_level, strand)
+        "compound_ssr_components": 5,  # Chunk 5: Components (component_id, compound_id, ssr_id, component_order, gap_to_next_bp)
+        "accession_metrics": 20,  # id + accession + run_id + 11 metric fields + 6 repeat_class breakdown fields (Chunk 8)
         "statistical_results": 14,
+        "batch_artifacts": 13,
+        "batch_normalized_records": 10,
     }
     for table, expected_count in columns.items():
         actual = len(inspector.get_columns(table))
